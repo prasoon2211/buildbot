@@ -16,6 +16,7 @@
 import itertools
 import os
 import re
+import sys
 import urllib
 
 from twisted.internet import defer
@@ -311,6 +312,16 @@ class GitPoller(base.PollingChangeSource, StateMixin):
             "utility to handle the result of getProcessOutputAndValue"
             (stdout, stderr, code) = res
             if code != 0:
+                if code == 128:
+                    # 128 is the error code git returns when things are
+                    # wrong on its end
+                    error_message = ('RuntimeError: command %s %s in %s on '
+                                    'repourl %s failed with exit code %d: %s'
+                                    % (command, args, path, self.repourl,
+                                       code, stderr)).strip()
+                    sys.stderr.write(error_message)
+                    sys.stderr.flush()
+                    sys.exit(1)
                 raise EnvironmentError('command %s %s in %s on repourl %s failed with exit code %d: %s'
                                        % (command, args, path, self.repourl, code, stderr))
             return stdout.strip()
