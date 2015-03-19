@@ -286,7 +286,7 @@ class TestGitPoller(gpo.GetProcessOutputMixin,
             })
 
     def test_poll_GitError(self):
-        # Raised when git exits with status code 128
+        # Raised when git exits with status code 128. See issue 2468
         self.expectCommands(
             gpo.Expect('git', 'init', '--bare', 'gitpoller-work')
             .exit(128),
