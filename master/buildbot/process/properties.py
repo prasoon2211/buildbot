@@ -21,10 +21,12 @@ from buildbot import config
 from buildbot import util
 from buildbot.interfaces import IProperties
 from buildbot.interfaces import IRenderable
+from buildbot.metricsservice import MetricsService
 from buildbot.util import flatten
 from buildbot.util import json
 from twisted.internet import defer
 from twisted.python.components import registerAdapter
+from twisted.python import log
 from zope.interface import implements
 
 
@@ -133,14 +135,46 @@ class Properties(util.ComparableMixin):
 
     has_key = hasProperty
 
-    def setProperty(self, name, value, source, runtime=False):
+    def setProperty(self, name, value, source, runtime=False, stepname=None):
         name = util.ascii2unicode(name)
         json.dumps(value)  # Let the exception propagate ...
         source = util.ascii2unicode(source)
 
+        if not stepname:
+            stepname = source
+        masterConfig = config.MasterConfig()
+
+        ## FIXIT : Remove
+        if name == "tree-size-KiB":
+            import ipdb;ipdb.set_trace()
+        ##
+
         self.properties[name] = (value, source)
         if runtime:
             self.runtime.add(name)
+
+        buildername = self.getProperty('buildername')
+        metricsService = MetricsService()
+        for influxService in MetricsService.influxServices:
+            serviceMetrics = influxService.metrics
+            for serviceMetric in serviceMetrics:
+                if buildername == serviceMetric[0] and \
+                   stepname == serviceMetric[1] and \
+                   name == serviceMetric[2]:
+                    data = {}
+                    data['series_name'] = buildername + '-' + stepname
+                    data['property_name'] = name
+                    data['value'] = value
+                    data['tags'] = {
+                        "buildername": buildername,
+                        "stepname": stepname
+                    }
+                    try:
+                        data['tags'].update(serviceMetric[3])
+                    except IndexError:
+                        pass
+
+                    metricsService.postDataToStorage(data)
 
     def getProperties(self):
         return self
@@ -178,13 +212,13 @@ class PropertiesMixin:
 
     has_key = hasProperty
 
-    def setProperty(self, propname, value, source='Unknown', runtime=None):
+    def setProperty(self, propname, value, source='Unknown', runtime=None, stepname=None):
         # source is not optional in IProperties, but is optional here to avoid
         # breaking user-supplied code that fails to specify a source
         props = IProperties(self)
         if runtime is None:
             runtime = self.set_runtime_properties
-        props.setProperty(propname, value, source, runtime=runtime)
+        props.setProperty(propname, value, source, runtime=runtime, stepname=stepname)
 
     def getProperties(self):
         return IProperties(self)

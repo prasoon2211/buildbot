@@ -24,6 +24,9 @@ from buildbot.interfaces import IScheduler
 from buildbot.interfaces import IStatusReceiver
 from buildbot.plugins.db import get_plugins
 
+# FIXIT later with get_plugins - once we have IStorageService maybe
+from buildbot.metricsservice import *
+
 
 __all__ = ['changes', 'schedulers', 'buildslave', 'steps', 'status', 'util']
 

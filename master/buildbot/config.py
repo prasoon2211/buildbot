@@ -105,6 +105,7 @@ class MasterConfig(util.ComparableMixin):
             type='simple',
         )
         self.metrics = None
+        self.metricsServices = None
         self.caches = dict(
             Builds=15,
             Changes=10,
@@ -131,7 +132,7 @@ class MasterConfig(util.ComparableMixin):
         'db', "db_poll_interval", "db_url", "eventHorizon",
         "logCompressionLimit", "logCompressionMethod", "logEncoding",
         "logHorizon", "logMaxSize", "logMaxTailSize", "manhole",
-        "collapseRequests", "metrics", "mq", "multiMaster", "prioritizeBuilders",
+        "collapseRequests", "metrics", "mq", "multiMaster", "metricsServices", "prioritizeBuilders",
         "projectName", "projectURL", "properties", "protocols", "revlink",
         "schedulers", "services", "slavePortnum", "slaves", "status", "title", "titleURL",
         "user_managers", "validation", 'www'
@@ -235,6 +236,7 @@ class MasterConfig(util.ComparableMixin):
             config.load_db(filename, config_dict)
             config.load_mq(filename, config_dict)
             config.load_metrics(filename, config_dict)
+            config.load_metricsServices(filename, config_dict)
             config.load_caches(filename, config_dict)
             config.load_schedulers(filename, config_dict)
             config.load_builders(filename, config_dict)
@@ -437,6 +439,15 @@ class MasterConfig(util.ComparableMixin):
                 error("c['metrics'] must be a dictionary")
             else:
                 self.metrics = metrics
+
+    def load_metricsServices(self, filename, config_dict):
+        # we don't try to validate metrics keys
+        if 'metricsServices' in config_dict:
+            metricsServices = config_dict["metricsServices"]
+            if not isinstance(metricsServices, list):
+                error("c['metricsServices'] must be a list")
+            else:
+                self.metricsServices = metricsServices
 
     def load_caches(self, filename, config_dict):
         explicit = False
