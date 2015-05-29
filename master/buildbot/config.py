@@ -105,7 +105,7 @@ class MasterConfig(util.ComparableMixin):
             type='simple',
         )
         self.metrics = None
-        self.metricsServices = None
+        self.metricsServices = []
         self.caches = dict(
             Builds=15,
             Changes=10,
