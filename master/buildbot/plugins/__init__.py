@@ -25,10 +25,10 @@ from buildbot.interfaces import IStatusReceiver
 from buildbot.plugins.db import get_plugins
 
 # FIXIT later with get_plugins - once we have IStorageService maybe
-from buildbot import metricsservice
+from buildbot.metrics import metrics_service
 
 
-__all__ = ['changes', 'schedulers', 'buildslave', 'steps', 'status', 'util', 'metricsservice']
+__all__ = ['changes', 'schedulers', 'buildslave', 'steps', 'status', 'util', 'metrics_service']
 
 
 # Names here match the names of the corresponding Buildbot module, hence

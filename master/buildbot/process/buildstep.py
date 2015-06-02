@@ -806,6 +806,11 @@ class BuildStep(results.ResultComputingConfigMixin,
             desc = desc + u' ' + util.join_list(self.descriptionSuffix)
         return desc
 
+    def _defaultContext(self):
+        return {
+            "builder_name": self.build.builder.name,
+        }
+
 
 components.registerAdapter(
     BuildStep._getStepFactory,

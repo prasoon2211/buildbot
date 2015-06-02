@@ -21,7 +21,7 @@ from buildbot import config
 from buildbot import util
 from buildbot.interfaces import IProperties
 from buildbot.interfaces import IRenderable
-from buildbot.metricsservice import MetricsService
+from buildbot.metrics import MetricsService
 from buildbot.util import flatten
 from buildbot.util import json
 from twisted.internet import defer
@@ -142,8 +142,6 @@ class Properties(util.ComparableMixin):
         self.properties[name] = (value, source)
         if runtime:
             self.runtime.add(name)
-
-        MetricsService(self).postDataToStorage(name, value)
 
     def getProperties(self):
         return self
