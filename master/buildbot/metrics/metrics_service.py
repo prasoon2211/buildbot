@@ -49,10 +49,10 @@ class MetricsService(service.ReconfigurableServiceMixin, service.AsyncMultiServi
         # To remove earlier used services when reconfig happens
         self.registeredDbServices = []
         for svc in new_config.metricsServices:
-            if not isinstance(svc, DBServiceBase):
+            if not isinstance(svc, MetricsStorageBase):
                 raise TypeError("Invalid type of metrics storage service {0!r}. "
-                                "Should be of type DBServiceBase, "
-                                "is: {0!r}".format(type(DBServiceBase)))
+                                "Should be of type MetricsStorageBase, "
+                                "is: {0!r}".format(type(MetricsStorageBase)))
             self.registeredDbServices.append(svc)
 
         return service.ReconfigurableServiceMixin.reconfigServiceWithBuildbotConfig(self,
@@ -76,8 +76,25 @@ class MetricsService(service.ReconfigurableServiceMixin, service.AsyncMultiServi
         for registeredService in self.registeredDbServices:
             yield registeredService.postMetricsValue(name, value, context)
 
+    def postProperties(self, properties, builder_name):
+        """
+        Expose all properties set in a step to be filtered and posted to
+        metrics storage.
+        """
+        for svc in self.registeredDbServices:
+            for metric in svc.metrics:
+                for prop_name in properties.properties:
+                    if builder_name == metric.builder_name and \
+                       prop_name == metric.property_name:
+                        context = {
+                            "builder_name": builder_name
+                        }
+                        self.postMetricsValue(prop_name,
+                                            properties.getProperty(prop_name),
+                                            context)
 
-class DBServiceBase(object):
+
+class MetricsStorageBase(object):
     """
     Base class for sub service responsible for passing on metrics data to a Metrics Storage
     """
@@ -85,7 +102,7 @@ class DBServiceBase(object):
         return defer.succeed(None)
 
 
-class InfluxDBService(DBServiceBase):
+class InfluxStorageService(MetricsStorageBase):
     """
     Delegates data to InfluxDB
     """
@@ -96,7 +113,7 @@ class InfluxDBService(DBServiceBase):
         self.password = password
         self.db = db
         if not name:
-            self.name = "InfluxDBService"
+            self.name = "InfluxStorageService"
         else:
             self.name = name
 
@@ -131,3 +148,12 @@ class InfluxDBService(DBServiceBase):
         data['tags'] = context
         points = [data]
         self.client.write_points(points)
+
+
+class CaptureProperty(object):
+    """
+    Convenience wrapper for getting metrics for filtering
+    """
+    def __init__(self, builder_name, property_name):
+        self.builder_name = builder_name
+        self.property_name = property_name

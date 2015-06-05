@@ -17,12 +17,18 @@ from twisted.internet import defer
 from buildbot.process import buildstep
 from buildbot.metrics import metrics_service
 
-class FakeDBService(metrics_service.DBServiceBase):
+class FakeMetricsStorageService(metrics_service.MetricsStorageBase):
     """
     Fake Storage service used in unit tests
     """
-    def __init__(self):
+    def __init__(self, metrics=None):
         self.stored_data = []
+        if not metrics:
+            self.metrics = [metrics_service.CaptureProperty("TestBuilder",
+                                                            'test')]
+        else:
+            self.metrics = metrics
+
 
     @defer.inlineCallbacks
     def postMetricsValue(self, name, value, context):
@@ -34,25 +40,11 @@ class FakeBuildStep(buildstep.BuildStep):
     """
     A fake build step to be used for testing.
     """
-    def __init__(self, dbService):
-        buildstep.BuildStep.__init__(self)
-        self.dbService = dbService
-
-    @defer.inlineCallbacks
-    def postValue(self):
-        self.master.config.metricsServices = [self.dbService]
-        yield self.master.metrics_service.reconfigServiceWithBuildbotConfig(self.master.config)
-        yield self.master.metrics_service.postMetricsValue("test",
-                                                         10,
-                                                         self._defaultContext())
-
-    def _defaultContext(self):
-        return {
-            "builder_name": "TestBuilder"
-        }
+    def doSomething(self):
+        self.setProperty("test", 10, "test")
 
     def start(self):
-        self.postValue()
+        self.doSomething()
 
 
 class FakeMetricsService(metrics_service.MetricsService):

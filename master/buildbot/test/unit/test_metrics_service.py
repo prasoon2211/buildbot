@@ -22,7 +22,7 @@ from buildbot import config
 from buildbot.test.fake import fakemaster
 from buildbot.test.fake import fakemetrics
 from buildbot.metrics.metrics_service import MetricsService
-from buildbot.metrics.metrics_service import InfluxDBService
+from buildbot.metrics.metrics_service import InfluxStorageService
 from buildbot.steps import master
 from buildbot.test.util import steps
 
@@ -48,8 +48,8 @@ class TestMetricsServicesConfiguration(TestMetricsServicesBase):
         # First, configure with an empty service
         yield self.master.metrics_service.reconfigServiceWithBuildbotConfig(self.master.config)
 
-        # Now, reconfigure with a FakeDBService.
-        self.master.config.metricsServices = [fakemetrics.FakeDBService()]
+        # Now, reconfigure with a FakeMetricsStorageService.
+        self.master.config.metricsServices = [fakemetrics.FakeMetricsStorageService()]
         yield self.master.metrics_service.reconfigServiceWithBuildbotConfig(self.master.config)
 
         # unset it, see it stop
@@ -66,10 +66,10 @@ class TestMetricsServicesConfiguration(TestMetricsServicesBase):
             # consume it somehow to please pylint
             [influxdb]
         except:
-            raise unittest.SkipTest("Skipping unit test of InfluxDBService because "
+            raise unittest.SkipTest("Skipping unit test of InfluxStorageService because "
                                     "you don't have the influxdb module in your system")
 
-        self.master.config.metricsServices = [InfluxDBService(
+        self.master.config.metricsServices = [InfluxStorageService(
             "fake_url", "fake_port", "fake_user", "fake_password", "fake_db", "fake_metrics",
         )]
         yield self.master.metrics_service.reconfigServiceWithBuildbotConfig(self.master.config)
@@ -79,7 +79,7 @@ class TestMetricsServicesYieldValue(TestMetricsServicesBase):
 
     @defer.inlineCallbacks
     def test_reconfigure_without_conf(self):
-        fake_db_service = fakemetrics.FakeDBService()
+        fake_db_service = fakemetrics.FakeMetricsStorageService()
         self.master.config.metricsServices = [fake_db_service]
         yield self.master.metrics_service.reconfigServiceWithBuildbotConfig(self.master.config)
         name = "metrics name"
@@ -92,7 +92,7 @@ class TestMetricsServicesYieldValue(TestMetricsServicesBase):
         )], fake_db_service.stored_data)
 
 
-class TestMetricsServicesCallFromAStep(steps.BuildStepMixin):
+class TestMetricsServicesCallFromAStep(steps.BuildStepMixin, unittest.TestCase):
     """
     test the metrics service from a fake step
     """
@@ -102,14 +102,22 @@ class TestMetricsServicesCallFromAStep(steps.BuildStepMixin):
     def tearDown(self):
         return self.tearDownBuildStep()
 
-    def test_metrics_call_from_step(self):
-        fake_db_service = fakemetrics.FakeDBService()
-        step = fakemetrics.FakeBuildStep(fake_db_service)
+    def test_expose_property_from_step(self):
+        # this step tests both the property being exposed and
+        # also the postMetrics method
+        fake_storage_service = fakemetrics.FakeMetricsStorageService()
+        step = fakemetrics.FakeBuildStep()
         self.setupStep(step)
+
+        self.master.config.metricsServices = [fake_storage_service]
+        self.master.metrics_service.reconfigServiceWithBuildbotConfig(self.master.config)
+
         d = self.runStep()
 
+        self.master.metrics_service.postProperties(self.properties, "TestBuilder")
+
         d.addCallback(lambda _: self.assertEqual([
-            ("test", "value", {"builer_name": "TestBuilder"}
-        )], fake_db_service.stored_data))
+            ("test", "value", {"builder_name": "TestBuilder"})
+        ], fake_db_service.stored_data))
 
         return d

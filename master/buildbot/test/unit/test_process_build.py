@@ -28,6 +28,7 @@ from buildbot.status.results import RETRY
 from buildbot.status.results import SUCCESS
 from buildbot.status.results import WARNINGS
 from buildbot.test.fake import fakemaster
+from buildbot.test.fake import fakemetrics
 from buildbot.test.fake import fakeprotocol
 from buildbot.test.fake import slave
 from buildbot.test.fake.fakebuild import FakeBuildStatus
@@ -752,6 +753,23 @@ class TestBuild(unittest.TestCase):
         expected_names = ["a", "b", "c_1", "c_2", "c"]
         executed_names = [s.name for s in b.executedSteps]
         self.assertEqual(executed_names, expected_names)
+
+    def test_postProperties(self):
+        # test whether the properties set by steps are
+        # going through
+        b = self.build
+        step = fakemetrics.FakeBuildStep()
+        props = {}
+        def metrics_postProperties(properties, b):
+            props.update(properties)
+
+        self.master.metrics_service.postProperties = metrics_postProperties
+
+        b.setStepFactories([FakeStepFactory(step)])
+        b.startBuild(FakeBuildStatus(), None, self.slavebuilder)
+
+        # now we check whether "test" was sent
+        self.assertEqual(props.get("test"), (10, "test"))
 
 
 class TestMultipleSourceStamps(unittest.TestCase):
