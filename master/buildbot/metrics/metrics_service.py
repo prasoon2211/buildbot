@@ -41,19 +41,19 @@ class MetricsService(service.ReconfigurableServiceMixin, service.AsyncMultiServi
         self.setName('metricsService')
         log.msg("Creating MetricsService")
         self.master = master
-        self.registeredDbServices = []
+        self.registeredStorageServices = []
 
     def reconfigServiceWithBuildbotConfig(self, new_config):
         log.msg("Reconfiguring MetricsService with config: {!r}".format(new_config))
 
         # To remove earlier used services when reconfig happens
-        self.registeredDbServices = []
+        self.registeredStorageServices = []
         for svc in new_config.metricsServices:
             if not isinstance(svc, MetricsStorageBase):
                 raise TypeError("Invalid type of metrics storage service {0!r}. "
                                 "Should be of type MetricsStorageBase, "
                                 "is: {0!r}".format(type(MetricsStorageBase)))
-            self.registeredDbServices.append(svc)
+            self.registeredStorageServices.append(svc)
 
         return service.ReconfigurableServiceMixin.reconfigServiceWithBuildbotConfig(self,
                                                                                     new_config)
@@ -73,7 +73,7 @@ class MetricsService(service.ReconfigurableServiceMixin, service.AsyncMultiServi
         if not context.has_key('builder_name'):
             raise KeyError("The method parameter `context` does not have "
                            "key 'builder_name'")
-        for registeredService in self.registeredDbServices:
+        for registeredService in self.registeredStorageServices:
             yield registeredService.postMetricsValue(name, value, context)
 
     def postProperties(self, properties, builder_name):
@@ -81,7 +81,7 @@ class MetricsService(service.ReconfigurableServiceMixin, service.AsyncMultiServi
         Expose all properties set in a step to be filtered and posted to
         metrics storage.
         """
-        for svc in self.registeredDbServices:
+        for svc in self.registeredStorageServices:
             for metric in svc.metrics:
                 for prop_name in properties.properties:
                     if builder_name == metric.builder_name and \

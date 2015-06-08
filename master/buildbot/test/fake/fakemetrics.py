@@ -16,6 +16,7 @@
 from twisted.internet import defer
 from buildbot.process import buildstep
 from buildbot.metrics import metrics_service
+from buildbot.status.results import SUCCESS
 
 class FakeMetricsStorageService(metrics_service.MetricsStorageBase):
     """
@@ -45,6 +46,7 @@ class FakeBuildStep(buildstep.BuildStep):
 
     def start(self):
         self.doSomething()
+        return SUCCESS
 
 
 class FakeMetricsService(metrics_service.MetricsService):

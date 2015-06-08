@@ -21,6 +21,7 @@ from buildbot.process.build import Build
 from buildbot.process.buildstep import BuildStep
 from buildbot.process.buildstep import LoggingBuildStep
 from buildbot.process.properties import Properties
+from buildbot.metrics import metrics_service
 from buildbot.status.results import CANCELLED
 from buildbot.status.results import EXCEPTION
 from buildbot.status.results import FAILURE
@@ -177,6 +178,35 @@ class TestBuild(unittest.TestCase):
         self.assertEqual(b.results, CANCELLED)
 
         self.assert_(('interrupt', ('stop it',), {}) in step.method_calls)
+
+    @defer.inlineCallbacks
+    def test_postProperties(self):
+        b = self.build
+        buildstatus = FakeBuildStatus()
+        b.build_status = buildstatus
+        # step = fakemetrics.FakeBuildStep()
+        props = None
+        step = Mock()
+        step.return_value = SUCCESS
+        def startStep(*args, **kw):
+            props.setProperty('test', 10, 'test')
+            return SUCCESS
+
+        step.startStep = startStep
+        props = interfaces.IProperties(b)
+
+        test_props = {}
+        def metrics_postProperties(properties, b):
+            test_props.update(properties.properties)
+
+        self.patch(metrics_service.MetricsService, 'postProperties',
+                   staticmethod(metrics_postProperties))
+
+        b.setStepFactories([FakeStepFactory(step)])
+        yield b.startBuild(FakeBuildStatus(), None, self.slavebuilder)
+
+        # now we check whether "test" was sent
+        self.assertEqual(test_props.get("test"), (10, "test"))
 
     def testAlwaysRunStepStopBuild(self):
         """Test that steps marked with alwaysRun=True still get run even if
@@ -753,23 +783,6 @@ class TestBuild(unittest.TestCase):
         expected_names = ["a", "b", "c_1", "c_2", "c"]
         executed_names = [s.name for s in b.executedSteps]
         self.assertEqual(executed_names, expected_names)
-
-    def test_postProperties(self):
-        # test whether the properties set by steps are
-        # going through
-        b = self.build
-        step = fakemetrics.FakeBuildStep()
-        props = {}
-        def metrics_postProperties(properties, b):
-            props.update(properties)
-
-        self.master.metrics_service.postProperties = metrics_postProperties
-
-        b.setStepFactories([FakeStepFactory(step)])
-        b.startBuild(FakeBuildStatus(), None, self.slavebuilder)
-
-        # now we check whether "test" was sent
-        self.assertEqual(props.get("test"), (10, "test"))
 
 
 class TestMultipleSourceStamps(unittest.TestCase):

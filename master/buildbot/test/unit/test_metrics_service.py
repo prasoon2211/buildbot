@@ -22,8 +22,10 @@ from buildbot import config
 from buildbot.test.fake import fakemaster
 from buildbot.test.fake import fakemetrics
 from buildbot.metrics.metrics_service import MetricsService
+from buildbot.metrics.metrics_service import MetricsStorageBase
 from buildbot.metrics.metrics_service import InfluxStorageService
 from buildbot.steps import master
+from buildbot.status.results import SUCCESS
 from buildbot.test.util import steps
 
 
@@ -42,19 +44,23 @@ class TestMetricsServicesConfiguration(TestMetricsServicesBase):
     @defer.inlineCallbacks
     def test_reconfigure_without_conf(self):
         yield self.master.metrics_service.reconfigServiceWithBuildbotConfig(self.master.config)
+        self.checkEqual(self.master.config)
 
     @defer.inlineCallbacks
     def test_reconfigure_with_fake_service(self):
-        # First, configure with an empty service
+        # First, configure with an emnpty service
         yield self.master.metrics_service.reconfigServiceWithBuildbotConfig(self.master.config)
+        self.checkEqual(self.master.config)
 
         # Now, reconfigure with a FakeMetricsStorageService.
         self.master.config.metricsServices = [fakemetrics.FakeMetricsStorageService()]
         yield self.master.metrics_service.reconfigServiceWithBuildbotConfig(self.master.config)
+        self.checkEqual(self.master.config)
 
         # unset it, see it stop
         self.master.config.metricsServices = []
         yield self.master.metrics_service.reconfigServiceWithBuildbotConfig(self.master.config)
+        self.checkEqual(self.master.config)
 
     # Smooth test of influx db service. We don't want to force people to install influxdb, so we
     # just disable this unit test if the influxdb module is not installed, using SkipTest
@@ -73,6 +79,31 @@ class TestMetricsServicesConfiguration(TestMetricsServicesBase):
             "fake_url", "fake_port", "fake_user", "fake_password", "fake_db", "fake_metrics",
         )]
         yield self.master.metrics_service.reconfigServiceWithBuildbotConfig(self.master.config)
+        self.checkEqual(self.master.config)
+
+    @defer.inlineCallbacks
+    def test_bad_configuration(self):
+        # First, configure with an emnpty service
+        yield self.master.metrics_service.reconfigServiceWithBuildbotConfig(self.master.config)
+        self.checkEqual(self.master.config)
+
+        # Now, reconfigure with a bad configuration.
+        self.master.config.metricsServices = [mock.Mock()]
+        yield self.assertRaises(TypeError,
+            self.master.metrics_service.reconfigServiceWithBuildbotConfig, self.master.config)
+
+
+    def checkEqual(self, new_config):
+        # Check whether the new_config was set in reconfigServiceWithBuildbotConfig
+        newMerticsStorageServices = [s for s in new_config.metricsServices
+                                     if isinstance(s, MetricsStorageBase)]
+        registeredStorageServices = \
+        [s for s in self.master.metrics_service.registeredStorageServices
+         if isinstance(s, MetricsStorageBase)]
+        for s in newMerticsStorageServices:
+            if s not in registeredStorageServices:
+                raise AssertionError("reconfigServiceWithBuildbotConfig failed."
+                                     "Not all storage services registered.")
 
 
 class TestMetricsServicesYieldValue(TestMetricsServicesBase):
@@ -102,22 +133,22 @@ class TestMetricsServicesCallFromAStep(steps.BuildStepMixin, unittest.TestCase):
     def tearDown(self):
         return self.tearDownBuildStep()
 
+    @defer.inlineCallbacks
     def test_expose_property_from_step(self):
         # this step tests both the property being exposed and
         # also the postMetrics method
         fake_storage_service = fakemetrics.FakeMetricsStorageService()
         step = fakemetrics.FakeBuildStep()
         self.setupStep(step)
+        self.expectOutcome(SUCCESS)
 
         self.master.config.metricsServices = [fake_storage_service]
         self.master.metrics_service.reconfigServiceWithBuildbotConfig(self.master.config)
 
-        d = self.runStep()
+        yield self.runStep()
 
         self.master.metrics_service.postProperties(self.properties, "TestBuilder")
 
-        d.addCallback(lambda _: self.assertEqual([
-            ("test", "value", {"builder_name": "TestBuilder"})
-        ], fake_db_service.stored_data))
-
-        return d
+        self.assertEqual([
+            ("test", 10, {"builder_name": "TestBuilder"})
+        ], fake_storage_service.stored_data)

@@ -545,6 +545,26 @@ This value can also be changed via a reconfig.
 
 Read more about metrics in the :ref:`Metrics` section in the developer documentation.
 
+.. bb:cfg:: metrics-services
+
+Metrics Services
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+   metrics = [metrics_service.CaptureProperty('runtests', 'tree-size-KiB')]
+   c['metricsServices'] = [metrics_service.InfluxStorageService(
+                          'localhost', 8086, 'root', 'root', 'test', metrics)]
+
+
+The ``metricsServices`` configuration value is a list of instances of subclasses of :py:class:`MetricsStorageBase`.
+Each element of the list a storage backend that helps store metrics that are passed to it via the :py:class:`MetricsService`.
+
+:py:class:`CaptureProperty` instance declares which properties must be filtered and sent to the :ref:`storage-backend`.
+The first argument is the ``builder_name`` and the second is ``property_name`` to be sent to :class:`MetricsService`
+
+For configuration options of :py:class`InfluxStorageService` and other storage backends, please read about it in the :ref:`storage-backend`.
+
 .. bb:cfg:: user_managers
 
 .. _Users-Options:
