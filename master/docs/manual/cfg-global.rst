@@ -545,10 +545,10 @@ This value can also be changed via a reconfig.
 
 Read more about metrics in the :ref:`Metrics` section in the developer documentation.
 
-.. bb:cfg:: metrics-services
+.. bb:cfg:: metrics-service
 
 Metrics Services
-~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 ::
 
@@ -557,13 +557,29 @@ Metrics Services
                           'localhost', 8086, 'root', 'root', 'test', metrics)]
 
 
+The Metrics Service is a new service being introduced in Buildbot Nine.
+This service supports for collecting arbitrary data from within a running Buildbot instace and export it do a number of storage backends.
+Currently, only `InfluxDB <http://influxdb.com>` is supported as a storage backend.
+Also, InfluxDB (or any other storage backend) is not a mandatory dependency.
+Buildbot can run without it although the :class:`MetricsService` will work only if a storage backend and it's Python client is installed.
+At present, :class:`MetricsService` can only keep track of ``Step`` properties.
+
 The ``metricsServices`` configuration value is a list of instances of subclasses of :py:class:`MetricsStorageBase`.
 Each element of the list a storage backend that helps store metrics that are passed to it via the :py:class:`MetricsService`.
 
 :py:class:`CaptureProperty` instance declares which properties must be filtered and sent to the :ref:`storage-backend`.
 The first argument is the ``builder_name`` and the second is ``property_name`` to be sent to :class:`MetricsService`
 
-For configuration options of :py:class`InfluxStorageService` and other storage backends, please read about it in the :ref:`storage-backend`.
+:py:class`InfluxStorageService` instance requires the following arguments:
+
+   * ``url``: The URL where the service is running.
+   * ``port``: The port on which the service is listening.
+   * ``user``: Username of a InfluxDB user.
+   * ``password``: Password for ``user``.
+   * ``db``: The name of database to be used.
+   * ``metrics``: A list of :py:class:`CaptureProperty`. This tells which metrics are to be stored in this storage backend.
+   * ``name=None``: (Optional) The name of this storage backend.
+
 
 .. bb:cfg:: user_managers
 

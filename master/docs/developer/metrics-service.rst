@@ -3,12 +3,8 @@
 Metrics Service
 ===============
 
-The Metrics Service is a new service being introduced in Buildbot Nine.
-This service supports for collecting arbitrary data from within a running Buildbot instace and export it do a number of storage backends.
-Currently, only `InfluxDB <http://influxdb.com>` is supported as a storage backend.
-At present, :class:`MetricsService` can only keep track of :class:`BuildStep` properties which can be exposed from the master's confuiguration.
-
 The metrics service is implemented in :mod:`buildbot.metrics.metrics_service`.
+Please see :bb:cfg:`metrics-service` for more.
 
 Metrics Service
 ---------------
@@ -27,7 +23,7 @@ Metrics Service
                       *Note:* The key 'builder_name' is required for the time being.
       :type context: dictionary
 
-      This method acts as a middleware for posting data to all storge backends.
+      This method acts as a middleware for posting data to all storage backends.
 
    .. py:method:: postProperties(properties, builder_name)
 
@@ -57,6 +53,8 @@ Currently, only `InfluxDB <http://influxdb.com>` is supported as a storage backe
 
 .. py:class:: InfluxStorageService
 
+   `InfluxDB <http://influxdb.com>` is a distributed, time series database that employs a key-value pair storage system.
+
    This class is a frontend to the InfluxDB storage backend.
    It is available in the configuration as ``metrics_service.InfluxStorageService``
    It takes the following initialization arguments:
@@ -83,12 +81,12 @@ Utilities
 
 .. py:class:: CaptureProperty
 
-   A placeholder for keeping track of the properties a user wants captured as mertics.
+   A placeholder for keeping track of the properties a user wants captured as metrics.
    It takes two arguments:
 
    * ``builder_name``: The name of builder in which the property is recorded.
-   * ``property_name``: The name of property needed to be recoreded as a metric.
+   * ``property_name``: The name of property needed to be recorded as a metric.
 
    It is available in the configuration as ``metrics_service.CaptureProperty``
-   A list of :class:`CaptureProperty` intances is passed to a storge backend for
+   A list of :class:`CaptureProperty` instances is passed to a storage backend for
    filtering out the build properties that are sent to :class:`MetricsService`.

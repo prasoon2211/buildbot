@@ -48,7 +48,7 @@ class TestMetricsServicesConfiguration(TestMetricsServicesBase):
 
     @defer.inlineCallbacks
     def test_reconfigure_with_fake_service(self):
-        # First, configure with an emnpty service
+        # First, configure with an empty service
         yield self.master.metrics_service.reconfigServiceWithBuildbotConfig(self.master.config)
         self.checkEqual(self.master.config)
 
