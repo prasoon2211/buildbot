@@ -521,6 +521,7 @@ class Build(properties.PropertiesMixin):
         else:
             text = ["build", "successful"]
         text.extend(self.text)
+
         return self.buildFinished(text, self.results)
 
     def buildException(self, why):
@@ -584,8 +585,8 @@ class Build(properties.PropertiesMixin):
         # we get all properties, post to MetricsService to filter out
         # the one that a user wants to post.
         properties = interfaces.IProperties(self)
-        self.master.metrics_service.postProperties(properties,
-                                                   self.builder.name)
+        self.master.stats_service.postProperties(properties,
+                                                 self.builder.name)
 
     # IBuildControl
 

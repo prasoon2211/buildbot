@@ -19,6 +19,7 @@ directly from this module.
 """
 
 from twisted.internet import reactor
+from twisted.internet import threads
 
 
 def deferredLocked(lock_or_attr):
@@ -43,3 +44,13 @@ def cancelAfter(seconds, deferred, _reactor=reactor):
         return x
 
     return deferred
+
+def deferToThread(f):
+    """
+    A convenience wrapper for threads.deferToThread that turns it into
+    a decorator.
+    Useful when making an async function all from a synchronous function.
+    """
+    def decorated(*args, **kwargs):
+        return threads.deferToThread(f, *args, **kwargs)
+    return decorated

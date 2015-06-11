@@ -21,7 +21,7 @@ from buildbot.process.build import Build
 from buildbot.process.buildstep import BuildStep
 from buildbot.process.buildstep import LoggingBuildStep
 from buildbot.process.properties import Properties
-from buildbot.metrics import metrics_service
+from buildbot.statistics import stats_service
 from buildbot.status.results import CANCELLED
 from buildbot.status.results import EXCEPTION
 from buildbot.status.results import FAILURE
@@ -29,7 +29,7 @@ from buildbot.status.results import RETRY
 from buildbot.status.results import SUCCESS
 from buildbot.status.results import WARNINGS
 from buildbot.test.fake import fakemaster
-from buildbot.test.fake import fakemetrics
+from buildbot.test.fake import fakestats
 from buildbot.test.fake import fakeprotocol
 from buildbot.test.fake import slave
 from buildbot.test.fake.fakebuild import FakeBuildStatus
@@ -184,7 +184,6 @@ class TestBuild(unittest.TestCase):
         b = self.build
         buildstatus = FakeBuildStatus()
         b.build_status = buildstatus
-        # step = fakemetrics.FakeBuildStep()
         props = None
         step = Mock()
         step.return_value = SUCCESS
@@ -196,11 +195,11 @@ class TestBuild(unittest.TestCase):
         props = interfaces.IProperties(b)
 
         test_props = {}
-        def metrics_postProperties(properties, b):
+        def stats_postProperties(properties, b):
             test_props.update(properties.properties)
 
-        self.patch(metrics_service.MetricsService, 'postProperties',
-                   staticmethod(metrics_postProperties))
+        self.patch(fakestats.FakeStatsService, 'postProperties',
+                   staticmethod(stats_postProperties))
 
         b.setStepFactories([FakeStepFactory(step)])
         yield b.startBuild(FakeBuildStatus(), None, self.slavebuilder)

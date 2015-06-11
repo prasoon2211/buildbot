@@ -22,7 +22,7 @@ from buildbot.status import build
 from buildbot.test.fake import bslavemanager
 from buildbot.test.fake import fakedata
 from buildbot.test.fake import fakedb
-from buildbot.test.fake import fakemetrics
+from buildbot.test.fake import fakestats
 from buildbot.test.fake import fakemq
 from buildbot.test.fake import pbmanager
 from buildbot.test.fake.botmaster import FakeBotMaster
@@ -188,7 +188,7 @@ class FakeMaster(service.MasterService):
 # Leave this alias, in case we want to add more behavior later
 
 
-def make_master(wantMq=False, wantDb=False, wantData=False, wantMetrics=True,
+def make_master(wantMq=False, wantDb=False, wantData=False, wantStats=True,
                 testcase=None, url=None, **kwargs):
     master = FakeMaster(**kwargs)
     if url:
@@ -203,6 +203,6 @@ def make_master(wantMq=False, wantDb=False, wantData=False, wantMetrics=True,
         master.db = fakedb.FakeDBConnector(master, testcase)
     if wantData:
         master.data = fakedata.FakeDataConnector(master, testcase)
-    if wantMetrics:
-        master.metrics_service = fakemetrics.FakeMetricsService(master)
+    if wantStats:
+        master.stats_service = fakestats.FakeStatsService(master)
     return master

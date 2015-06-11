@@ -21,7 +21,6 @@ from buildbot import config
 from buildbot import util
 from buildbot.interfaces import IProperties
 from buildbot.interfaces import IRenderable
-from buildbot.metrics import MetricsService
 from buildbot.util import flatten
 from buildbot.util import json
 from twisted.internet import defer

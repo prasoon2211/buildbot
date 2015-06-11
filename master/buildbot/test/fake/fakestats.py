@@ -15,25 +15,26 @@
 
 from twisted.internet import defer
 from buildbot.process import buildstep
-from buildbot.metrics import metrics_service
+from buildbot.statistics import stats_service
+from buildbot.statistics import storage_backends
+from buildbot.statistics import capture
 from buildbot.status.results import SUCCESS
 
-class FakeMetricsStorageService(metrics_service.MetricsStorageBase):
+class FakeStatsStorageService(storage_backends.StatsStorageBase):
     """
     Fake Storage service used in unit tests
     """
-    def __init__(self, metrics=None):
+    def __init__(self, stats=None):
         self.stored_data = []
-        if not metrics:
-            self.metrics = [metrics_service.CaptureProperty("TestBuilder",
-                                                            'test')]
+        if not stats:
+            self.stats = [capture.CaptureProperty("TestBuilder",
+                                                  'test')]
         else:
-            self.metrics = metrics
-
+            self.stats = stats
 
     @defer.inlineCallbacks
-    def postMetricsValue(self, name, value, context):
-        self.stored_data.append((name, value, context))
+    def postStatsValue(self, name, value, series_name, context={}):
+        self.stored_data.append((name, value, series_name, context))
         yield None
 
 
@@ -49,8 +50,20 @@ class FakeBuildStep(buildstep.BuildStep):
         return SUCCESS
 
 
-class FakeMetricsService(metrics_service.MetricsService):
+class FakeStatsService(stats_service.StatsService):
     """
-    Fake MetricsService for use in fakemaster
+    Fake StatsService for use in fakemaster
     """
-    pass
+    def postProperties(self, properties, builder_name):
+        """
+        No filtering. Straight post stuff to FakeStatsStorageService.
+        """
+        for svc in self.registeredStorageServices:
+            for prop_name in properties.properties:
+                context = {
+                    "builder_name": builder_name
+                }
+                series_name = builder_name + "-" + prop_name
+                self.postStatsValue(svc, prop_name,
+                                    properties.getProperty(prop_name),
+                                    series_name, context)

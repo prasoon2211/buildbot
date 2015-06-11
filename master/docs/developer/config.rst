@@ -136,10 +136,10 @@ described in :ref:`developer-Reconfiguration`.
         The metrics configuration from :bb:cfg:`metrics`, or an empty
         dictionary by default.
 
-    .. py:attribute:: metricsServices
+    .. py:attribute:: statsServices
 
         A list of all storage backends as defined in :ref:`storage-backend`.
-        Each element must be of a subclass of :py:class:`MetricsStorageBase`
+        Each element must be of a subclass of :py:class:`StatsStorageBase`
 
     .. py:attribute:: caches
 

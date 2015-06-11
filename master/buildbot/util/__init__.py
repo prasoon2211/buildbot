@@ -28,6 +28,7 @@ from twisted.python import reflect
 
 from buildbot.interfaces import IConfigured
 from buildbot.util.misc import deferredLocked
+from buildbot.util.misc import deferToThread
 
 from zope.interface import implements
 
