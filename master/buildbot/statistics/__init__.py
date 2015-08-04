@@ -20,8 +20,9 @@ from buildbot.statistics.capture import CaptureData
 from buildbot.statistics.capture import CaptureProperty
 from buildbot.statistics.stats_service import StatsService
 from buildbot.statistics.storage_backends.influxdb_client import InfluxStorageService
+from buildbot.statistics.storage_backends.json_backend import JSONStorageBackend
 
 __all__ = [
     'StatsService', 'InfluxStorageService', 'CaptureProperty', 'CaptureBuildDuration',
-    'CaptureBuildStartTime', 'CaptureBuildEndTime', 'CaptureData'
+    'CaptureBuildStartTime', 'CaptureBuildEndTime', 'CaptureData', 'JSONStorageBackend'
 ]
